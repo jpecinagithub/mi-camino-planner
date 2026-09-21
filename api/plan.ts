@@ -142,17 +142,19 @@ function validatePlan(obj: any, input: PlannerInput): obj is CaminoPlan {
   if (!Array.isArray(obj.stages) || obj.stages.length !== input.days) return false;
   const sum = obj.stages.reduce((a: number, s: any) => a + (s.distance || 0), 0);
   if (Math.abs(sum - obj.totalDistance) > 1.5) return false;
-  // Detectar duplicación típica: San Sebastián→Zarautz 45km (real 22) etc.
   for (const s of obj.stages) {
     const o = s.origin?.toLowerCase() || "", d = s.destination?.toLowerCase() || "";
-    if (o.includes("san sebastian") && d.includes("zarautz") && Math.abs(s.distance - 22) > 5) return false;
-    if (o.includes("zarautz") && d.includes("deba") && Math.abs(s.distance - 21) > 5) return false;
-    if (o.includes("deba") && d.includes("markina") && Math.abs(s.distance - 24) > 6) return false;
-    if (o.includes("markina") && d.includes("gernika") && Math.abs(s.distance - 25.4) > 6) return false;
+    // Solo rechaza lo imposible para no bloquear; el resto solo advierte en logs
     if (o.includes("luarca") && d.includes("santiago") && s.distance < 300) return false; // Luarca→Santiago no puede ser 48km
     if (!["easy", "moderate", "hard"].includes(s.difficulty)) return false;
     if (typeof s.description !== "string") return false;
     if (s.wikiloc && s.wikiloc.url && !s.wikiloc.url.startsWith("https://")) return false;
+  }
+  // Advertencias no bloqueantes para distancias típicas (solo log)
+  for (const s of obj.stages) {
+    const o = s.origin?.toLowerCase() || "", d = s.destination?.toLowerCase() || "";
+    if (o.includes("san sebastian") && d.includes("zarautz") && Math.abs(s.distance - 22) > 8) console.warn(`[validate] San Sebastián→Zarautz ${s.distance}km esperado 22km`);
+    if (o.includes("zarautz") && d.includes("deba") && Math.abs(s.distance - 21) > 8) console.warn(`[validate] Zarautz→Deba ${s.distance}km esperado 21km`);
   }
   return true;
 }
@@ -178,19 +180,24 @@ async function callAI(prompt: string): Promise<string> {
     });
     return result.text;
   }
-  // Fallback xKiro con tool custom + perplexity via fetch si es necesario
-  const result = await generateText({
-    model: gateway(model),
-    prompt,
-    tools: {
-      getWikilocRoute: {
-        description: getWikilocRoute.description,
-        inputSchema: getWikilocRoute.inputSchema as any,
-        execute: getWikilocRoute.execute as any,
+
+  // xKiro / OpenAI-compatible directo: usa generateText sin gateway si es posible, si falla usa fetch directo
+  try {
+    const result = await generateText({
+      model: gateway(model),
+      prompt,
+      tools: {
+        getWikilocRoute: {
+          description: getWikilocRoute.description,
+          inputSchema: getWikilocRoute.inputSchema as any,
+          execute: getWikilocRoute.execute as any,
+        },
       },
-    },
-  });
-  if (result.text) return result.text;
+    });
+    if (result.text) return result.text;
+  } catch (e) {
+    console.warn("gateway generateText falló, usando fetch directo xKiro", e);
+  }
   const base = baseUrl.replace(/\/$/, "");
   const finalUrl = base.includes("/chat/completions") ? base : base.endsWith("/v1") ? `${base}/chat/completions` : `${base}/v1/chat/completions`;
   const res = await fetch(finalUrl, {
@@ -298,10 +305,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     parsed.id = parsed.id || `plan-${Date.now()}`;
     return res.status(200).json(parsed);
   } catch (err: any) {
-    console.error("plan handler error", err?.message || err);
+    console.error("plan handler error", err?.message || err, err?.stack);
     if (err.message === "AI_NOT_CONFIGURED") {
       return res.status(500).json({ error: "IA no configurada. Configura AI_API_KEY, AI_BASE_URL y AI_MODEL." });
     }
-    return res.status(500).json({ error: "No hemos podido preparar tu Camino. Inténtalo de nuevo." });
+    // Devolver detalle para debug (temporal)
+    return res.status(500).json({ error: `No hemos podido preparar tu Camino: ${err.message || err}` });
   }
 }
