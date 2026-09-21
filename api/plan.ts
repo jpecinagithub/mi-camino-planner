@@ -80,13 +80,13 @@ const getWikilocRoute = {
 function validateInput(body: any): { valid: boolean; error?: string; input?: PlannerInput } {
   if (!body || typeof body !== "object") return { valid: false, error: "Body inválido" };
   const { camino, origin, destination, transportMode, days } = body;
-  if (!camino || typeof camino !== "string" || camino.trim().length < 2) return { valid: false, error: "Camino es requerido" };
+  if (camino !== "Camino Francés") return { valid: false, error: "Solo Camino Francés disponible en esta versión" };
   if (!origin || typeof origin !== "string" || origin.trim().length < 2) return { valid: false, error: "Origen es requerido" };
   if (!destination || typeof destination !== "string" || destination.trim().length < 2) return { valid: false, error: "Destino es requerido" };
   if (!TRANSPORT_ALLOW.includes(transportMode)) return { valid: false, error: "Modo de transporte inválido" };
   const nDays = Number(days);
   if (!Number.isInteger(nDays) || nDays < 1 || nDays > 60) return { valid: false, error: "Días debe estar entre 1 y 60" };
-  return { valid: true, input: { camino: camino.trim(), origin: origin.trim(), destination: destination.trim(), transportMode, days: nDays } };
+  return { valid: true, input: { camino: "Camino Francés", origin: origin.trim(), destination: destination.trim(), transportMode, days: nDays } };
 }
 
 function buildPrompt(input: PlannerInput): string {

@@ -62,22 +62,9 @@ export interface CaminoPlannerService {
   generatePlan(input: PlannerInput): Promise<CaminoPlan>;
 }
 
-export type AppState =
-  | "initial"
-  | "loading"
-  | "success"
-  | "error"
-  | "regenerating";
+export type AppState = "initial" | "loading" | "success" | "error" | "regenerating";
 
-export const CAMINOS = [
-  "Camino Francés",
-  "Camino Portugués",
-  "Camino del Norte",
-  "Camino Primitivo",
-  "Camino Inglés",
-  "Vía de la Plata",
-  "Otro",
-] as const;
+export const CAMINOS = ["Camino Francés"] as const;
 
 export const TRANSPORT_LABELS: Record<TransportMode, string> = {
   walking: "A pie",

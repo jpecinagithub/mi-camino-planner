@@ -15,8 +15,7 @@ import { Sparkles, RefreshCcw, Download, Pencil, AlertCircle, MapPinned } from "
 import { downloadPlanPdf } from "../utils/pdf";
 
 export function Home() {
-  const [camino, setCamino] = useState("Camino Francés");
-  const [otroCamino, setOtroCamino] = useState("");
+  const camino = "Camino Francés";
   const [origin, setOrigin] = useState("Logroño");
   const [destination, setDestination] = useState("Santiago de Compostela");
   const [transportMode, setTransportMode] = useState<TransportMode>("walking");
@@ -27,7 +26,6 @@ export function Home() {
   const [showEdit, setShowEdit] = useState(false);
   const [loadingIdx, setLoadingIdx] = useState(0);
 
-  // Rehydration from localStorage
   useEffect(() => {
     try {
       const rawPlan = localStorage.getItem("mi-camino:lastPlan");
@@ -35,11 +33,6 @@ export function Home() {
       if (rawPlan && rawInput && !plan) {
         const parsedPlan = JSON.parse(rawPlan);
         const parsedInput = JSON.parse(rawInput) as PlannerInput;
-        setCamino(parsedInput.camino);
-        if (parsedInput.camino !== "Camino Francés" && parsedInput.camino !== "Camino Portugués" && parsedInput.camino !== "Camino del Norte" && parsedInput.camino !== "Camino Primitivo" && parsedInput.camino !== "Camino Inglés" && parsedInput.camino !== "Vía de la Plata") {
-          setCamino("Otro");
-          setOtroCamino(parsedInput.camino);
-        }
         setOrigin(parsedInput.origin);
         setDestination(parsedInput.destination);
         setTransportMode(parsedInput.transportMode);
@@ -47,9 +40,7 @@ export function Home() {
         setPlan(parsedPlan);
         setState("success");
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [plan, setPlan, setState]);
 
   const displayPlan = plan;
@@ -62,13 +53,12 @@ export function Home() {
   }, [isLoading]);
 
   const handleCreate = () => {
-    const finalCamino = camino === "Otro" ? (otroCamino.trim() || "Otro") : camino;
     if (!origin.trim() || !destination.trim()) {
       alert("Por favor, indica origen y destino.");
       return;
     }
     const input: PlannerInput = {
-      camino: finalCamino,
+      camino,
       origin: origin.trim(),
       destination: destination.trim(),
       transportMode,
@@ -93,10 +83,6 @@ export function Home() {
 
   const handleModify = () => {
     if (displayPlan) {
-      setCamino(displayPlan.camino === "Otro" || !["Camino Francés","Camino Portugués","Camino del Norte","Camino Primitivo","Camino Inglés","Vía de la Plata"].includes(displayPlan.camino) ? "Otro" : displayPlan.camino);
-      if (!["Camino Francés","Camino Portugués","Camino del Norte","Camino Primitivo","Camino Inglés","Vía de la Plata"].includes(displayPlan.camino)) {
-        setOtroCamino(displayPlan.camino);
-      }
       setOrigin(displayPlan.origin);
       setDestination(displayPlan.destination);
       setTransportMode(displayPlan.transportMode);
@@ -123,7 +109,7 @@ export function Home() {
               Tu Camino de Santiago, <span className="text-camino-green">etapa a etapa.</span>
             </h1>
             <p className="mt-3 text-[16px] sm:text-[17px] text-stone-500 max-w-[560px] mx-auto leading-relaxed">
-              Dinos cómo quieres hacerlo y prepararemos tu Camino.
+              Dinos cómo quieres hacerlo y prepararemos tu Camino Francés.
             </p>
             <p className="mt-2 inline-flex items-center gap-2 bg-camino-yellow-light border border-amber-200 text-amber-800 text-xs font-semibold px-3 py-1.5 rounded-full">
               <Sparkles className="w-3.5 h-3.5" /> En 30 segundos tienes organizado tu Camino
@@ -133,7 +119,7 @@ export function Home() {
 
         {(!displayPlan || showEdit) && (
           <div className="mt-8 space-y-4">
-            <CaminoSelector value={camino} onChange={setCamino} otroValue={otroCamino} onOtroChange={setOtroCamino} />
+            <CaminoSelector />
             <LocationInputs origin={origin} destination={destination} onOriginChange={setOrigin} onDestinationChange={setDestination} />
             <TransportSelector value={transportMode} onChange={setTransportMode} />
             <DaysSelector value={days} onChange={setDays} />
@@ -214,7 +200,7 @@ export function Home() {
               <div className="text-sm text-stone-700">
                 <span className="font-semibold">¡Buen Camino!</span> Guarda este plan en tu móvil. Cada etapa termina en localidades con servicios.
                 <br />
-                <span className="text-stone-500 text-xs">Distancias orientativas: a pie 20–30 km, MTB 40–70 km, carretera 60–100 km. Ajustadas por desnivel y disponibilidad de alojamiento.</span>
+                <span className="text-stone-500 text-xs">Distancias orientativas: a pie 20–30 km, MTB 40–70 km, carretera 60–100 km.</span>
               </div>
             </div>
           </div>
@@ -231,8 +217,8 @@ export function Home() {
 
       <footer className="mt-8 border-t border-stone-200 bg-white">
         <div className="max-w-[840px] mx-auto px-4 sm:px-6 py-6 text-center">
-          <p className="text-xs text-stone-500">Mi Camino Planner • Sin cuentas, sin base de datos • Tu plan se guarda solo en tu navegador</p>
-          <p className="text-[11px] text-stone-400 mt-1">Las rutas de Wikiloc se abren en un visor integrado. Nunca inventamos URLs de embed.</p>
+          <p className="text-xs text-stone-500">Mi Camino Planner • Camino Francés • Sin cuentas • Tu plan se guarda solo en tu navegador</p>
+          <p className="text-[11px] text-stone-400 mt-1">Las rutas de Wikiloc se abren en un visor integrado.</p>
         </div>
       </footer>
     </div>
